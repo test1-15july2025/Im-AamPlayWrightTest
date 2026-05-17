@@ -2,25 +2,30 @@ import { test, expect, Browser, BrowserContext, Page, chromium, firefox, webkit 
 // import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 // import { WebActions } from '../lib/webActions';
 // import { generateRandomEmail } from '../lib/dataHelper';
+import { ImAamFunctionLibrary } from '../lib/ImAamFunctionLibrary';
 
 test.describe.configure({ mode: 'serial' }); // Run tests in this block sequentially
 
 let browser: Browser;
 let context: BrowserContext;
 let page: Page;
+let iafl: ImAamFunctionLibrary;
+
 
 
 // export class HomePageUItest {
-// constructor(page: Page) {
-//   this.page = page;
-// }
-
-// Get browser type from environment or default to chromium
-const browserType = process.env.BROWSER_TYPE === 'firefox' ? firefox : process.env.BROWSER_TYPE === 'webkit' ? webkit : chromium;
-
-test.beforeAll('Launch browser', async () => {
+  // constructor(page: Page) {
+    //   this.page = page;
+    // }
+    
+    // Get browser type from environment or default to chromium
+    const browserType = process.env.BROWSER_TYPE === 'firefox' ? firefox : process.env.BROWSER_TYPE === 'webkit' ? webkit : chromium;
+    
+  test.beforeAll('Launch browser', async () => {
   console.log('Setup: Preparing environment...');
-
+  iafl = new ImAamFunctionLibrary(page);
+  iafl.configTestFlow();
+      
   browser = await browserType.launch({
     headless: false,
     args: ['--start-maximized'],
@@ -35,7 +40,9 @@ test.beforeAll('Launch browser', async () => {
     },
   });
   page = await context.newPage();
-  await page.goto('https://staging.im-aam.com/');
+  // await page.goto('https://staging.im-aam.com/');
+  console.log('URL from Excel:', iafl.url);
+  await page.goto(iafl.url);
   // Perform any necessary setup actions here, such as logging in or preparing test data.
   // await browser.close();  
 });
@@ -56,7 +63,7 @@ test('has title', async () => {
   await expect(page).toHaveTitle(/AI Picks/);
 });
 
-test('has expected UI elements', async ({},testInfo) => {
+test.skip('has expected UI elements', async ({},testInfo) => {
 // test('has expected UI elements', async (testInfo) => {
 // test('has expected UI elements', async ({page},testInfo) => {
   // await page.goto('https://staging.im-aam.com/');

@@ -3,7 +3,7 @@ import { Page } from "@playwright/test";
 import * as ExcelJS from 'exceljs';
 
 
-export class ImAamFunctionLibrary {
+export class AUTfunctionLibrary {
   // private page: Page;
   page: Page;
 
@@ -84,19 +84,68 @@ export class ImAamFunctionLibrary {
     await this.page.waitForLoadState('load');
   }
 
-  async navigateToBaseUrl() {
-    for (let i = 0; i < 10; i++) {
+  async handleUnexpectedPopup() {
+    const popupSelectors = [
+      // "button:has-text('Close')",
+      "div:has-text('Close')",
+      // "button:has-text('No thanks')",
+      // "button:has-text('Skip')",
+      // "button:has-text('Accept')",
+      // "button:has-text('OK')",
+      // "[aria-label*='close' i]",
+      // "[aria-label*='Close' i]",
+      // ".close",
+      // ".modal-close",
+      // "div[role='dialog'] button",
+    ];
+
+    for (const selector of popupSelectors) {
       try {
-        await this.page.goto(this.url, { waitUntil: 'domcontentloaded' });
-        await this.page.waitForLoadState('load');
-        if (await this.page.locator("[class*='page_landingContainer']").count() > 0) {
-          break;
-        } else {
-          await this.page.reload({ waitUntil: 'domcontentloaded' });
-        }
+        await this.page.locator(selector).first().click({ timeout: 1000 });
+        return true;
       } catch {
-        await this.page.waitForTimeout(2000); // Wait for 2 seconds before retrying
-        await this.page.keyboard.press('Control+F5');
+        // Ignore if the selector is not present or not clickable.
+      }
+    }
+
+    try {
+      // await this.page.keyboard.press('Escape');
+      await this.page.locator('#dismiss-button').click({ timeout: 1000 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async safeWaitForTimeout(milliseconds: number) {
+    if (this.page.isClosed()) {
+      return false;
+    }
+
+    try {
+      await this.page.waitForTimeout(milliseconds);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async navigateToBaseUrl() {
+    for (let i = 0; i < 4; i++) {
+      try {
+        await this.page.goto(this.url, {
+          waitUntil: 'domcontentloaded',
+          timeout: 10000,
+        });
+        await this.page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
+        await this.handleUnexpectedPopup();
+
+        if (await this.page.locator('body').count().catch(() => 0) > 0) {
+          break;
+        }
+      } catch (error) {
+        console.warn(`Navigation attempt ${i + 1} failed: ${error instanceof Error ? error.message : String(error)}`);
+        await this.safeWaitForTimeout(1000);
       }
     }
   }
